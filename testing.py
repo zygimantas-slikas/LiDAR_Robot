@@ -1,20 +1,48 @@
 import b0RemoteApi
 import time
 
-with b0RemoteApi.RemoteApiClient('b0RemoteApi_pythonClient','b0RemoteApi',60) as client:    
+with b0RemoteApi.RemoteApiClient('Robot_Python_Controller','b0RemoteApi',60) as client:    
 
     def callb(msg):
         print(msg)
-   #b0RemoteApiControlledBubbleRob
     client.simxAddStatusbarMessage('Hello',client.simxDefaultPublisher())
-    s1=client.simxGetObjectHandle('Cube',client.simxServiceCall())
-    s2=client.simxGetObjectHandle('shape2',client.simxServiceCall())
-    prox=client.simxGetObjectHandle('prox',client.simxServiceCall())
-    vis=client.simxGetObjectHandle('vis',client.simxServiceCall())
-    fs=client.simxGetObjectHandle('fs',client.simxServiceCall())
-    coll=client.simxGetCollisionHandle('coll',client.simxServiceCall())
-    dist=client.simxGetDistanceHandle('dist',client.simxServiceCall())
-    
+
+
+
+    robot=client.simxGetObjectHandle('robot',client.simxServiceCall())
+    front_right_wheel = client.simxGetObjectHandle('front_right_motor',client.simxServiceCall())
+    front_left_wheel = client.simxGetObjectHandle('front_left_motor',client.simxServiceCall())
+    back_right_wheel = client.simxGetObjectHandle('back_right_motor',client.simxServiceCall())
+    back_left_wheel = client.simxGetObjectHandle('back_left_motor',client.simxServiceCall())
+
+
+
+    result1 = client.simxSetJointTargetVelocity(front_left_wheel[1], 0, client.simxServiceCall())
+    result2 = client.simxSetJointTargetVelocity(front_right_wheel[1], 20, client.simxServiceCall())
+    result1 = client.simxSetJointTargetVelocity(back_left_wheel[1], 0, client.simxServiceCall())
+    result2 = client.simxSetJointTargetVelocity(back_right_wheel[1], 20, client.simxServiceCall())
+    client.simxCloseScene(client.simxServiceCall())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     '''
     res=client.simxAuxiliaryConsoleOpen('theTitle',50,4,[10,400],[1024,100],[1,1,0],[0,0,0],client.simxServiceCall())
     client.simxAuxiliaryConsolePrint(res[1],'Hello World!!!\n',client.simxServiceCall())
@@ -100,12 +128,3 @@ with b0RemoteApi.RemoteApiClient('b0RemoteApi_pythonClient','b0RemoteApi',60) as
     print(client.simxCallScriptFunction('myFunction@DefaultCamera','sim.scripttype_customizationscript',59,client.simxServiceCall()))
     print(client.simxCallScriptFunction('myFunction@DefaultCamera','sim.scripttype_customizationscript',None,client.simxServiceCall()))
     '''
-    #for x in range(0,10):
-    copies=client.simxCopyPasteObjects([s1[1]],1,client.simxServiceCall())
-    move = client.simxSetObjectPosition(s1[1], -1, [1,1,1], client.simxServiceCall())
-    if (move[0] == True):
-        print("object moved succesfuly")
-    print(copies)
-    print(s1[1])
-    client.simxRemoveObjects(copies[1],0,client.simxServiceCall())
-    client.simxCloseScene(client.simxServiceCall())
