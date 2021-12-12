@@ -20,24 +20,30 @@ class Robot_Controller:
         self.connection.simxSetJointTargetVelocity(self.front_right_wheel, speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_left_wheel, speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_right_wheel, speed, self.connection.simxServiceCall())
+
     def turn_right(self, speed):
         self.connection.simxSetJointTargetVelocity(self.front_left_wheel, speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.front_right_wheel, -1*speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_left_wheel, speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_right_wheel, -1*speed, self.connection.simxServiceCall())
+
     def turn_left(self, speed):
         self.connection.simxSetJointTargetVelocity(self.front_left_wheel, -1*speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.front_right_wheel, speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_left_wheel, -1*speed, self.connection.simxServiceCall())
         self.connection.simxSetJointTargetVelocity(self.back_right_wheel, speed, self.connection.simxServiceCall())
+
     def get_robot_position(self):
         return self.connection.simxGetObjectPosition(self.robot, -1, self.connection.simxServiceCall())[1][0:2]
+
     def get_lidar_data(self):
         direction = self.connection.simxGetJointPosition(self.lidar_position, self.connection.simxServiceCall())[1]
         distance = self.connection.simxReadProximitySensor(self.lidar, self.connection.simxServiceCall())[2]
         return [distance, direction]
+
     def get_robot_rotation(self):
         return self.connection.simxGetObjectOrientation(self.robot, -1, self.connection.simxServiceCall())[1][2]
+
     def get_lidar_point(self):
         pos = self.get_robot_position()
         rotation = self.get_robot_rotation()
@@ -59,7 +65,8 @@ if __name__ == "__main__":
         robot1.lidar = client.simxGetObjectHandle('lidar_ray',client.simxServiceCall())[1]
         robot1.lidar_position = client.simxGetObjectHandle('lidar_pos',client.simxServiceCall())[1]
 
-        robot1.drive_forward(0)
+
+        robot1.drive_forward(1)
         # robot1.turn_right(1.968)
         points = [[],[]]
         while True:
