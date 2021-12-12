@@ -1,5 +1,6 @@
 import b0RemoteApi
 import time
+import math
 
 global front_right_wheel 
 global front_left_wheel 
@@ -38,20 +39,24 @@ if __name__ == "__main__":
         front_left_wheel = client.simxGetObjectHandle('front_left_motor',client.simxServiceCall())
         back_right_wheel = client.simxGetObjectHandle('back_right_motor',client.simxServiceCall())
         back_left_wheel = client.simxGetObjectHandle('back_left_motor',client.simxServiceCall())
-        lidar = client.simxGetObjectHandle('lidar_sensor',client.simxServiceCall())
         
+        lidar = client.simxGetObjectHandle('lidar_ray',client.simxServiceCall())
+        lidar_pos = client.simxGetObjectHandle('lidar_pos',client.simxServiceCall())
+
+        for i in range(0,10):
+            direction = client.simxGetJointPosition(lidar_pos[1], client.simxServiceCall())
+            print("Direction: " + str(180/math.pi*direction[1])) 
+            points = client.simxReadProximitySensor(lidar[1], client.simxServiceCall())
+            if (len(points) > 2):
+                print("Distance: " + str(points[2]) + "\n")
+            time.sleep(0.5)
+
         drive_forward(client, 0)
         #turn_left(client, 1)
         #time.sleep(1)
         #turn_right(client, 1)
         #time.sleep(1)
         #drive_forward(client, 0)
-        child = client.simxGetObjectChild(lidar[1], 0, client.simxServiceCall())
-        print(child)
-        velodyne = client.simxGetObjectHandle('velodyneVPL_16_ptCloud', client.simxServiceCall())
-        print(velodyne)
-
-        velodyne_points=client.simxCallScriptFunction('lidar_sensor', 1, 'getVelodyneData_function',client.simxServiceCall())
-        print(velodyne_points)
-
+       
+       
         client.simxCloseScene(client.simxServiceCall())
