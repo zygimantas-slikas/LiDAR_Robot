@@ -14,6 +14,10 @@ class Robot_Controller:
     lidar = 0
     lidar_position = 0
     robot_rotation = 0
+    front_sonar = 0
+    left_sonar = 0
+    right_sonar = 0
+    line_sensor = 0
     
     def drive_forward(self, speed):
         self.connection.simxSetJointTargetVelocity(self.front_left_wheel, speed, self.connection.simxServiceCall())
@@ -53,6 +57,38 @@ class Robot_Controller:
         pos[1] -= lidar[0]*math.sin(lidar[1])
         return pos
 
+    def getDistanceFront(self, max_dist):
+        detected = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[0]
+        distance = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[1]
+
+        if detected < 1:
+            distance = max_dist
+
+        return distance
+
+    def getDistanceLeft(self, max_dist):
+        detected = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[0]
+        distance = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[1]
+
+        if detected < 1:
+            distance = max_dist
+
+        return distance
+
+    def getDistanceRight(self, max_dist):
+        detected = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[0]
+        distance = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[1]
+
+        if detected < 1:
+            distance = max_dist
+
+        return distance
+
+    def getLineColor(self):
+        value = self.connection.simxGetVisionSensorImage(self.line_sensor, True, self.connection.simxServiceCall())
+
+        return value
+
 if __name__ == "__main__":
     with b0RemoteApi.RemoteApiClient('Robot_Python_Controller','b0RemoteApi',60) as client:    
         robot1 = Robot_Controller() 
@@ -65,24 +101,72 @@ if __name__ == "__main__":
         robot1.lidar = client.simxGetObjectHandle('lidar_ray',client.simxServiceCall())[1]
         robot1.lidar_position = client.simxGetObjectHandle('lidar_pos',client.simxServiceCall())[1]
 
+        robot1.front_sonar = client.simxGetObjectHandle('front_proximity_sensor',client.simxServiceCall())[1]
+        robot1.left_sonar = client.simxGetObjectHandle('left_proximity_sensor',client.simxServiceCall())[1]
+        robot1.right_sonar = client.simxGetObjectHandle('right_proximity_sensor',client.simxServiceCall())[1]
 
-        robot1.drive_forward(1)
+        robot1.line_sensor = client.simxGetObjectHandle('Vision_sensor',client.simxServiceCall())[1]
+
+        max_dist = 1
+        dist = max_dist
+        # state = 1
+
         # robot1.turn_right(1.968)
+
+
         points = [[],[]]
+
         while True:
-            plt.axis([-3,3,-3,3])
-            plt.scatter(points[0], points[1])
-            for i in range(0, 50):
-                point = robot1.get_lidar_point()
-                points[0].append(point[0])
-                points[1].append(point[1])
-                plt.scatter(point[0], point[1])
-                plt.pause(0.001)
-            plt.pause(0.5)
-            robot1.drive_forward(1)
-            time.sleep(2)
-            robot1.turn_left(1)
+            color = robot1.getLineColor()
+            print(color)
+
+            robot1.drive_forward(0.7)
+            # if state==1: # drive forward
+            #     robot1.drive_forward(0.5)
+            #     print("state 1")
+            # elif state==2: # turn left
+            #     print("state 2")
+            #     robot1.turn_left(0.5)
+            #     state=1
+            #     dist = max_dist
+
+
+            distFront = robot1.getDistanceFront(max_dist)
+            distLeft = robot1.getDistanceLeft(max_dist)
+            distRight = robot1.getDistanceRight(max_dist)
+
+            if distFront == max_dist:
+                print("Wall ahead !")
+                
+                if distLeft == max_dist:
+                    print("have to turn right !")
+                    robot1.turn_right(0.7)
+                elif distRight == max_dist:
+                    print("have to turn left !")
+                    robot1.turn_left(0.7)
+
+            #     state = 2
+
+            # plt.axis([-3,3,-3,3])
+            # plt.scatter(points[0], points[1])
+
+            # for i in range(0, 50):
+            #     point = robot1.get_lidar_point()
+            #     points[0].append(point[0])
+            #     points[1].append(point[1])
+            #     plt.scatter(point[0], point[1])
+            #     plt.pause(0.001)
+
+           
             time.sleep(1)
-            robot1.drive_forward(0)
+            
+
+
+            # plt.pause(0.5)
+            # robot1.drive_forward(1)
+            # time.sleep(2)
+            # robot1.turn_left(1)
+            # time.sleep(1)
+            # robot1.drive_forward(0)
 
         client.simxCloseScene(client.simxServiceCall())
