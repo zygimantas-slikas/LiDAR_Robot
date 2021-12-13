@@ -206,18 +206,18 @@ if __name__ == "__main__":
 
         
 
-        #     #     if right_rear_lidar == right_front_lidar:
-        #     #         print("driving forward")
-        #     #         robot1.drive_forward(0.5)
-        #     #         time.sleep(0.5)
-        #     #     elif right_front_lidar > right_rear_lidar:
-        #     #         print("need to adjust to right")
-        #     #         robot1.turn_right(0.5)
-        #     #         time.sleep(0.5)
-        #     #     elif right_front_lidar < right_rear_lidar:
-        #     #         print("need to adjust to left")
-        #     #         robot1.turn_left(0.5)
-        #     #         time.sleep(0.5)
+            #     if right_rear_lidar == right_front_lidar:
+            #         print("driving forward")
+            #         robot1.drive_forward(0.5)
+            #         time.sleep(0.5)
+            #     elif right_front_lidar > right_rear_lidar:
+            #         print("need to adjust to right")
+            #         robot1.turn_right(0.5)
+            #         time.sleep(0.5)
+            #     elif right_front_lidar < right_rear_lidar:
+            #         print("need to adjust to left")
+            #         robot1.turn_left(0.5)
+            #         time.sleep(0.5)
 
         #     robot1.drive_forward(0.5)
 
@@ -240,14 +240,14 @@ if __name__ == "__main__":
         #             robot1.turn_left(0.5)
         #             time.sleep(1)
         
-        #     # plt.axis([-3,3,-3,3])
-        #     # plt.scatter(points[0], points[1])
+            # plt.axis([-3,3,-3,3])
+            # plt.scatter(points[0], points[1])
 
-        #     # for i in range(0, 50):
-        #     #     point = robot1.get_lidar_point()
-        #     #     points[0].append(point[0])
-        #     #     points[1].append(point[1])
-        #     #     plt.scatter(point[0], point[1])
-        #     #     plt.pause(0.001)
+            # for i in range(0, 50):
+            #     point = robot1.get_lidar_point()
+            #     points[0].append(point[0])
+            #     points[1].append(point[1])
+            #     plt.scatter(point[0], point[1])
+            #     plt.pause(0.001)
 
         client.simxCloseScene(client.simxServiceCall())
