@@ -110,17 +110,6 @@ class Robot_Controller:
 
         return value
 
-    def followWall(self, max_dist):
-        print("following right wall . . .")
-        distRight = self.getDistanceRight(max_dist)
-
-        if distRight == max_dist:
-            print("not wall, lets turn right here !")
-            self.turn_right(0.5)
-        else:
-            self.drive_forward(0.5)
-
-
 if __name__ == "__main__":
     with b0RemoteApi.RemoteApiClient('Robot_Python_Controller','b0RemoteApi',60) as client:    
         robot1 = Robot_Controller() 
@@ -142,112 +131,78 @@ if __name__ == "__main__":
 
         robot1.line_sensor = client.simxGetObjectHandle('Vision_sensor',client.simxServiceCall())[1]
 
-        max_dist = 2
+        max_dist = 1
         dist = max_dist
 
-        # 1 - follow right wall
-        # 2 - wall in front. Turn 90
-        # 3 - wall not detected. Curve 90
-        # 4 - finish line detected
-        state = 1
+        min_lidar_dist = 0.3
 
         points = [[],[]]
 
         while True:
-            if state == 1:
-                robot1.followWall(max_dist)
-
-                distFront = robot1.getDistanceFront(max_dist)
-                distRight = robot1.getDistanceRight(max_dist)
-
-                color = robot1.getLineColor()
-
-                print(distRight)
-
-                if distFront == 1:
-                    state = 2
-
-                if distRight == 0:
-                    state = 3
-
-                # TODO: if vision sensor detect black color - stop simulation
-                # if color == "black"
-                #     state = 4
-
-                
-
-            elif state == 2:
-                print("wall ahead, turning left . . .")
-                robot1.turn_left(0.5)
-                time.sleep(0.5)
-                state = 1
-
-            elif state == 3:
-                print("no wall, lets turn here right  . . .")
-                robot1.turn_right(0.9)
-                time.sleep(0.9)
-                robot1.drive_forward(0.5)
-                time.sleep(0.5)
-                state = 1
-
-            # elif state == 4:
-                # TODO: stop simulation, goal reached
-                
-
-        # while True:
-        #     right_rear_lidar = robot1.get_right_rear_data()
-        #     right_front_lidar = robot1.get_right_front_data()
+            right_rear_lidar = robot1.get_right_rear_data()
+            right_front_lidar = robot1.get_right_front_data()
 
             
-        #     distFront = robot1.getDistanceFront(max_dist)
-        #     distLeft = robot1.getDistanceLeft(max_dist)
-        #     distRight = robot1.getDistanceRight(max_dist)
+            distFront = robot1.getDistanceFront(max_dist)
+            distLeft = robot1.getDistanceLeft(max_dist)
+            distRight = robot1.getDistanceRight(max_dist)
 
 
+            # if right_rear_lidar == right_front_lidar:
+            #     print("driving forward")
+            #     robot1.drive_forward(1)
+            #     time.sleep(1)
+            # elif right_front_lidar > right_rear_lidar:
+            #     print("need to adjust to right")
+
+            #     while right_front_lidar > right_rear_lidar:
+            #         robot1.turn_right(0.1)
+            #         time.sleep(0.1)
+            #         right_rear_lidar = robot1.get_right_rear_data()
+            #         right_front_lidar = robot1.get_right_front_data()
+
+            # elif right_front_lidar < right_rear_lidar:
+            #     print("need to adjust to left")
+
+            #     while right_front_lidar < right_rear_lidar:
+            #         robot1.turn_left(0.1)
+            #         time.sleep(0.1)
+            #         right_rear_lidar = robot1.get_right_rear_data()
+            #         right_front_lidar = robot1.get_right_front_data()
+
+            color = robot1.getLineColor()
+            # print(color)
+
+            robot1.drive_forward(0.5)
+
+
+            if distFront <= max_dist:
+                print("Wall ahead !")
+
+                if distLeft <= max_dist:
+                    print("have to turn right !")
+                    robot1.turn_right(0.5)
+                    time.sleep(0.5)
+                elif distRight <= max_dist:
+                    print("have to turn left !")
+                    robot1.turn_left(0.5)
+                    time.sleep(0.5)
+                else:
+                    print("need to turn somwhere")
+                    robot1.drive_backward(0.5)
+                    time.sleep(1)
+                    robot1.turn_left(0.5)
+                    time.sleep(1)
         
+            # plt.axis([-3,3,-3,3])
+            # plt.scatter(points[0], points[1])
 
-        #     #     if right_rear_lidar == right_front_lidar:
-        #     #         print("driving forward")
-        #     #         robot1.drive_forward(0.5)
-        #     #         time.sleep(0.5)
-        #     #     elif right_front_lidar > right_rear_lidar:
-        #     #         print("need to adjust to right")
-        #     #         robot1.turn_right(0.5)
-        #     #         time.sleep(0.5)
-        #     #     elif right_front_lidar < right_rear_lidar:
-        #     #         print("need to adjust to left")
-        #     #         robot1.turn_left(0.5)
-        #     #         time.sleep(0.5)
+            # for i in range(0, 50):
+            #     point = robot1.get_lidar_point()
+            #     points[0].append(point[0])
+            #     points[1].append(point[1])
+            #     plt.scatter(point[0], point[1])
+            #     plt.pause(0.001)
 
-        #     robot1.drive_forward(0.5)
-
-
-        #     if distFront == max_dist:
-        #         print("Wall ahead !")
-
-        #         if distLeft == max_dist:
-        #             print("have to turn right !")
-        #             robot1.turn_right(0.5)
-        #             time.sleep(0.5)
-        #         elif distRight == max_dist:
-        #             print("have to turn left !")
-        #             robot1.turn_left(0.5)
-        #             time.sleep(0.5)
-        #         else:
-        #             print("need to turn somwhere")
-        #             robot1.drive_backward(0.5)
-        #             time.sleep(1)
-        #             robot1.turn_left(0.5)
-        #             time.sleep(1)
-        
-        #     # plt.axis([-3,3,-3,3])
-        #     # plt.scatter(points[0], points[1])
-
-        #     # for i in range(0, 50):
-        #     #     point = robot1.get_lidar_point()
-        #     #     points[0].append(point[0])
-        #     #     points[1].append(point[1])
-        #     #     plt.scatter(point[0], point[1])
-        #     #     plt.pause(0.001)
-
+ 
         client.simxCloseScene(client.simxServiceCall())
