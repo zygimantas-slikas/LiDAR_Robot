@@ -4,6 +4,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
+import asyncio
 
 class Robot_Controller:
     connection = 0
@@ -80,28 +81,31 @@ class Robot_Controller:
         return pos
 
     def getDistanceFront(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[1]
+        detected = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[1]
 
-        if detected < 1:
+        if detected == 1:
+            distance = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[2]
+        elif detected == 0:
             distance = max_dist
 
         return distance
 
     def getDistanceLeft(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[1]
+        detected = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[1]
 
-        if detected < 1:
+        if detected == 1:
+            distance = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[2]
+        elif detected == 0:
             distance = max_dist
 
         return distance
 
     def getDistanceRight(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[1]
+        detected = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[1]
 
-        if detected < 1:
+        if detected == 1:
+            distance = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[1]
+        elif detected == 0:
             distance = max_dist
 
         return distance
@@ -162,31 +166,38 @@ if __name__ == "__main__":
 
                 distFront = robot1.getDistanceFront(max_dist)
                 distRight = robot1.getDistanceRight(max_dist)
+                distLeft = robot1.getDistanceLeft(max_dist)
+
+                print(distFront)
 
                 color = robot1.getLineColor()
 
-                print(color)
-
-                if distFront == 1:
+                if distFront < 0.5:
                     state = 2
 
-                if distRight == 0:
+                if distRight == max_dist:
                     state = 3
 
-                # TODO: if vision sensor detect black color - stop simulation
                 if color == b'\x17':
                     state = 4
 
                 
 
             elif state == 2:
-                print("wall ahead, turning left . . .")
-                robot1.turn_left(0.5)
-                time.sleep(0.5)
-                state = 1
+                # print("wall ahead, turning left . . .")
+                if distLeft < 0.5:
+                    robot1.drive_backward(0.3)
+                    time.sleep(0.3)
+                    robot1.turn_right(0.3)
+                    time.sleep(0.3)
+                    state = 1
+                else:
+                    robot1.turn_left(0.6)
+                    time.sleep(0.6)
+                    state = 1
 
             elif state == 3:
-                print("no wall, lets curve right  . . .")
+                # print("no wall, lets curve right  . . .")
                 robot1.turn_right(0.7)
                 time.sleep(0.7)
                 robot1.drive_forward(0.5)
@@ -196,6 +207,17 @@ if __name__ == "__main__":
             elif state == 4:
                 robot1.drive_backward(0)
                 time.sleep(60)
+
+            plt.axis([-3,3,-3,3])
+            plt.scatter(points[0], points[1])
+
+            for i in range(0, 1):
+                point = robot1.get_lidar_point()
+                points[0].append(point[0])
+                points[1].append(point[1])
+                plt.scatter(point[0], point[1])
+                plt.pause(0.001)
+
 
         # while True:
         #     right_rear_lidar = robot1.get_right_rear_data()
