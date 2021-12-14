@@ -3,6 +3,7 @@ import time
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from joblib import Parallel, delayed
 
 class Robot_Controller:
     connection = 0
@@ -108,17 +109,18 @@ class Robot_Controller:
     def getLineColor(self):
         value = self.connection.simxGetVisionSensorImage(self.line_sensor, True, self.connection.simxServiceCall())
 
-        return value
+        return value[2]
 
-    def followWall(self, max_dist):
-        print("following right wall . . .")
-        distRight = self.getDistanceRight(max_dist)
+    def drawMap(points):
+        plt.axis([-3,3,-3,3])
+        plt.scatter(points[0], points[1])
 
-        if distRight == max_dist:
-            print("not wall, lets turn right here !")
-            self.turn_right(0.5)
-        else:
-            self.drive_forward(0.5)
+        for i in range(0, 50):
+            point = robot1.get_lidar_point()
+            points[0].append(point[0])
+            points[1].append(point[1])
+            plt.scatter(point[0], point[1])
+            plt.pause(0.001)
 
 
 if __name__ == "__main__":
@@ -155,14 +157,15 @@ if __name__ == "__main__":
 
         while True:
             if state == 1:
-                robot1.followWall(max_dist)
+                # print("following right wall . . .")
+                robot1.drive_forward(0.5)
 
                 distFront = robot1.getDistanceFront(max_dist)
                 distRight = robot1.getDistanceRight(max_dist)
 
                 color = robot1.getLineColor()
 
-                print(distRight)
+                print(color)
 
                 if distFront == 1:
                     state = 2
@@ -171,8 +174,8 @@ if __name__ == "__main__":
                     state = 3
 
                 # TODO: if vision sensor detect black color - stop simulation
-                # if color == "black"
-                #     state = 4
+                if color == b'\x17':
+                    state = 4
 
                 
 
@@ -183,16 +186,16 @@ if __name__ == "__main__":
                 state = 1
 
             elif state == 3:
-                print("no wall, lets turn here right  . . .")
-                robot1.turn_right(0.9)
-                time.sleep(0.9)
+                print("no wall, lets curve right  . . .")
+                robot1.turn_right(0.7)
+                time.sleep(0.7)
                 robot1.drive_forward(0.5)
                 time.sleep(0.5)
                 state = 1
 
-            # elif state == 4:
-                # TODO: stop simulation, goal reached
-                
+            elif state == 4:
+                robot1.drive_backward(0)
+                time.sleep(60)
 
         # while True:
         #     right_rear_lidar = robot1.get_right_rear_data()
