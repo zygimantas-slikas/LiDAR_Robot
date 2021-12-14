@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 class Robot_Controller:
     connection = 0
     robot = 0
-
+    max_dist = 2
+    
     front_right_wheel = 0
     front_left_wheel  = 0
     back_right_wheel  = 0
@@ -78,47 +79,100 @@ class Robot_Controller:
         pos[1] -= lidar[0]*math.sin(lidar[1])
         return pos
 
-    def getDistanceFront(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())[1]
-
-        if detected < 1:
-            distance = max_dist
-
-        return distance
-
-    def getDistanceLeft(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())[1]
-
-        if detected < 1:
-            distance = max_dist
-
-        return distance
-
-    def getDistanceRight(self, max_dist):
-        detected = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[0]
-        distance = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())[1]
-
-        if detected < 1:
-            distance = max_dist
-
-        return distance
+    def getDistanceFront(self):
+        distance = self.connection.simxReadProximitySensor(self.front_sonar, self.connection.simxServiceCall())
+        if (distance[1] == 1):
+            return distance[2]
+        else:
+            return False
+    def getDistanceLeft(self):
+        distance = self.connection.simxReadProximitySensor(self.left_sonar, self.connection.simxServiceCall())
+        if (distance[1] == 1):
+            return distance[2]
+        else:
+            return False
+    def getDistanceRight(self):
+        distance = self.connection.simxReadProximitySensor(self.right_sonar, self.connection.simxServiceCall())
+        if (distance[1] == 1):
+            return distance[2]
+        else:
+            return False
 
     def getLineColor(self):
         value = self.connection.simxGetVisionSensorImage(self.line_sensor, True, self.connection.simxServiceCall())
-
         return value
 
     def followWall(self, max_dist):
         print("following right wall . . .")
         distRight = self.getDistanceRight(max_dist)
-
         if distRight == max_dist:
             print("not wall, lets turn right here !")
             self.turn_right(0.5)
         else:
             self.drive_forward(0.5)
+    
+    def lidar_scan_around(self):
+        lidar_start_direction = self.get_lidar_data()[1]
+        corners = []
+        points = [[],[]]
+        curren_direction = lidar_start_direction+ math.pi
+        last_point = []
+        while not(0.2>(lidar_start_direction-curren_direction)>0):
+            pos = self.get_robot_position()
+            rotation = self.get_robot_rotation()
+            lidar = self.get_lidar_data()
+            curren_direction = lidar[1]
+            lidar[1] += rotation
+            pos[0] -= lidar[0]*math.cos(lidar[1])
+            pos[1] -= lidar[0]*math.sin(lidar[1])
+            if (len(last_point) != 0):
+                if (self.euclidean_distance(last_point, pos) > 0.5):
+                    corners.append([(pos[0] + last_point[0])/2, (pos[1] + last_point[1])/2, curren_direction])
+            last_point = pos
+            points[0].append(pos[0])
+            points[1].append(pos[1])
+        return (points, corners)
+
+    def euclidean_distance(self, point1, point2):
+        return math.sqrt((point1[0] - point2[0])**2+(point1[1] - point2[1])**2)
+
+    def go_to_point(self, point):
+        walls = [False,False,False]
+        target_rotation = self.get_robot_rotation() + point[2]
+        while(self.euclidean_distance(self.get_robot_position(), point[0:2]) > 0.5):    
+            while not(0.3>(target_rotation - self.get_robot_rotation())>-0.3):
+                var = self.get_robot_rotation()
+                self.turn_left(1)
+                time.sleep(0.3)
+                self.drive_forward(0)
+            walls[0] = self.getDistanceLeft()
+            walls[1] = self.getDistanceFront()
+            walls[2] = self.getDistanceRight()
+            for i in range(0, len(walls)):
+                if (walls[i] != False and walls[i] < self.max_dist):
+                    walls[i] = True
+                else:
+                    walls[i] = False
+            if (walls[1] == False):
+                self.drive_forward(1)
+                time.sleep(0.5)
+                self.drive_forward(0)
+            elif (walls[2] == False):
+                while (self.getDistanceFront() != False):
+                    self.turn_right(1)
+                    time.sleep(0.5)
+                    self.drive_forward(0)
+                self.drive_forward(1)
+                time.sleep(1)
+                self.drive_forward(0) 
+            elif (walls[0] == False):
+                while (self.getDistanceFront() != False):
+                    self.turn_left(1)
+                    time.sleep(0.5)
+                    self.drive_forward(0)
+                self.drive_forward(1)
+                time.sleep(1)
+                self.drive_forward(0)                
 
 
 if __name__ == "__main__":
@@ -142,56 +196,59 @@ if __name__ == "__main__":
 
         robot1.line_sensor = client.simxGetObjectHandle('Vision_sensor',client.simxServiceCall())[1]
 
-        max_dist = 2
-        dist = max_dist
-
-        # 1 - follow right wall
-        # 2 - wall in front. Turn 90
-        # 3 - wall not detected. Curve 90
-        # 4 - finish line detected
-        state = 1
-
+        robot1.drive_forward(0)
         points = [[],[]]
 
         while True:
-            if state == 1:
-                robot1.followWall(max_dist)
+            #scan with lidar
+            data = robot1.lidar_scan_around()
+            plt.axis([-3,3,-3,3])
+            plt.plot(data[0][0], data[0][1], 'o')
+            plt.plot([x[0] for x in data[1]],[x[1] for x in data[1]], 'x')
+            robot_position = robot1.get_robot_position()
+            plt.plot(robot_position[0], robot_position[1], '*r')
+            plt.show()
+            print(data[1])
+            points[0].append(data[0][0])
+            points[1].append(data[0][1])
+            plt.plot(points[0], points[1], 'o')
+            plt.plot(robot_position[0], robot_position[1], '*r')
+            plt.show()
+            robot1.go_to_point(data[1][0])
+            print("end")
+            # if state == 1:
+            #     robot1.followWall(max_dist)
 
-                distFront = robot1.getDistanceFront(max_dist)
-                distRight = robot1.getDistanceRight(max_dist)
+            #     distFront = robot1.getDistanceFront(max_dist)
+            #     distRight = robot1.getDistanceRight(max_dist)
 
-                color = robot1.getLineColor()
+            #     color = robot1.getLineColor()
 
-                print(distRight)
+            #     print(distRight)
 
-                if distFront == 1:
-                    state = 2
+            #     if distFront == 1:
+            #         state = 2
 
-                if distRight == 0:
-                    state = 3
+            #     if distRight == 0:
+            #         state = 3
 
-                # TODO: if vision sensor detect black color - stop simulation
-                # if color == "black"
-                #     state = 4
-
-                
-
-            elif state == 2:
-                print("wall ahead, turning left . . .")
-                robot1.turn_left(0.5)
-                time.sleep(0.5)
-                state = 1
-
-            elif state == 3:
-                print("no wall, lets turn here right  . . .")
-                robot1.turn_right(0.9)
-                time.sleep(0.9)
-                robot1.drive_forward(0.5)
-                time.sleep(0.5)
-                state = 1
-
-            # elif state == 4:
-                # TODO: stop simulation, goal reached
+            #     # TODO: if vision sensor detect black color - stop simulation
+            #     # if color == "black"
+            #     #     state = 4
+            # elif state == 2:
+            #     print("wall ahead, turning left . . .")
+            #     robot1.turn_left(0.5)
+            #     time.sleep(0.5)
+            #     state = 1
+            # elif state == 3:
+            #     print("no wall, lets turn here right  . . .")
+            #     robot1.turn_right(0.9)
+            #     time.sleep(0.9)
+            #     robot1.drive_forward(0.5)
+            #     time.sleep(0.5)
+            #     state = 1
+            # # elif state == 4:
+            #     # TODO: stop simulation, goal reached
                 
 
         # while True:
