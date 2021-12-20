@@ -121,17 +121,20 @@ class Robot_Controller:
         left_dist = self.getDistanceLeft()
         right_dist = self.getDistanceRight()
         position = self.get_robot_position()
-        while self.euclidean_distance(position, point[0:2]) > 0.45: # kol nepriarteta prie tasko su 0.45 atstumo pakaida
+        while self.euclidean_distance(position, point[0:2]) > 0.3: # kol nepriarteta prie tasko su 0.45 atstumo pakaida
             position = self.get_robot_position()
             self.visited_points.append(position)
             front_dist = self.getDistanceFront()
             left_dist = self.getDistanceLeft()
             right_dist = self.getDistanceRight()
             #kol taskas nepasiektas ir priekyje nera kliuties
-            while ((self.euclidean_distance(position, point[0:2]) > 0.45) and
-            (front_dist > 0.5)):
+            while ((self.euclidean_distance(position, point[0:2]) > 0.3) and
+            (front_dist > 0.4)):
                 position = self.get_robot_position()
                 self.visited_points.append(position) # irasomi taskai ur jau robota buvo kad nereiketu kita karta grizti
+                print(self.getLineColor()[2])
+                if (self.getLineColor()[2] == b'\x17'):
+                    return
                 front_dist = self.getDistanceFront()
                 left_dist = self.getDistanceLeft()
                 right_dist = self.getDistanceRight()
@@ -143,15 +146,15 @@ class Robot_Controller:
                     self.turn_left(0.5) # psisukti i kaire
                     time.sleep(0.5)
                     self.drive_forward(0)
-                if front_dist > 0.45: # jei priekije yra laisvos vietos
+                if front_dist > 0.4: # jei priekije yra laisvos vietos
                     self.drive_forward(1) # pavaziuoti i prieki greiciu 1
                     time.sleep(0.5)
                     self.drive_forward(0) #sustabdyti judejima
                 if ((front_dist>0.8)and(left_dist>0.8)) or ((front_dist>0.8)and(right_dist>0.8)) or ((left_dist>0.8)and(right_dist>0.8)):
                     break #jei pasiektas taskas kur galima daugiau nei viena judejimo kryptis
-            if self.euclidean_distance(position, point[0:2]) < 0.45: #jei pasiektas tikslo taskas - nutraukti
+            if self.euclidean_distance(position, point[0:2]) < 0.3: #jei pasiektas tikslo taskas - nutraukti
                 break 
-            if (front_dist <= 0.5) or ((front_dist>0.8)and(left_dist>0.8)) or ((front_dist>0.8)and(right_dist>0.8)) or ((left_dist>0.8)and(right_dist>0.8)):
+            if (front_dist <= 0.4) or ((front_dist>0.8)and(left_dist>0.8)) or ((front_dist>0.8)and(right_dist>0.8)) or ((left_dist>0.8)and(right_dist>0.8)):
                 #jei yra daugiau nei vienas laisvas kelias arba priekyje kliutis, Pakoreguoti roboto pasisukima i tikslo taska
                 self.rotate(self.get_relative_point_rotation(point[0:2]))
 
@@ -241,7 +244,6 @@ if __name__ == "__main__":
             plt.plot(robot_position[0], robot_position[1], '*r') # roboto dabartine pozicija 
             plt.title("Taškai gauti iš dabartinės pozicijos")
             plt.show()
-            print(data[1])
             zeros = zip_points(data[0], zeros) # tasku sarasas sudedamas i bool masyva atitinkanti zemelapi 
             #su 0.1 atstumu tarp kiekvieno tasko, (pasalinami dublikatai ir suapvalinamos reiksmes)
             points = get_points_from_bit_map(zeros) # gaunamas visu tasku sarasas is masyvo (tik atvaizdavimui)
@@ -251,10 +253,20 @@ if __name__ == "__main__":
             plt.title("Turimas žemėlapis")
             plt.show()
 
+            if (robot1.euclidean_distance(robot1.get_robot_position(),(-1.5, 1.0)) <= 1):
+                print("finish")
+                robot1.go_to_point_2((-2.5, 1.5))
+                if (robot1.euclidean_distance(robot1.get_robot_position(),(-2, 1.5)) <= 0.5):
+                    print("Finish")
+                    break
+
             unvisited = [x for x in data[1] if robot1.is_point_unvisited(x)] #isfiltraujami tikslo taskai kuriuose robotas nebuvo
             if (len(unvisited) > 0): # jei yra lankytinu tasku
                 print("goint to " + str(unvisited[0]))
                 robot1.go_to_point_2(unvisited[0]) # keliaujama i nauja taska
+                if (robot1.getLineColor()[2] == b'\x17'):
+                    print("Finish")
+                    break
             else: # nerastu nauju tasku keliavimui, sustoti
                 print("everything visited")
                 break
